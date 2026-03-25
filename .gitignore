@@ -1,0 +1,30 @@
+# Backend (Gradle / IDE)
+goldentime/build/
+goldentime/bin/
+goldentime/out/
+goldentime/.gradle/
+goldentime/.idea/
+
+# Frontend (Vite)
+golden/golden/node_modules/
+golden/golden/dist/
+
+# Python
+num/.venv/
+num/__pycache__/
+num/.cache/
+num/.paddleocr/
+*.pyc
+
+# GitHub 100MB limit — exclude oversized weight file (re-download or use Git LFS separately)
+num/best.pt
+
+# Logs
+num/server.log
+*.log
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

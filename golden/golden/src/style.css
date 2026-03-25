@@ -1,0 +1,58 @@
+:root {
+  /* ── 브랜드 컬러 ── */
+  --navy:        #0d2137;
+  --navy-mid:    #1a3a5c;
+  --navy-light:  #2a5298;
+  --blue:        #1976d2;
+  --blue-dark:   #1251a3;
+  --blue-light:  #dbeafe;
+  --teal:        #0891b2;
+
+  /* ── 텍스트 ── */
+  --text:        #374151;
+  --text-h:      #111827;
+  --text-muted:  #6b7280;
+  --text-light:  #9ca3af;
+
+  /* ── 배경 / 레이아웃 ── */
+  --bg:          #eef1f6;
+  --bg-card:     #ffffff;
+  --border:      rgba(0, 0, 0, 0.08);
+  --border-solid: #e5e7eb;
+
+  /* ── 그림자 ── */
+  --shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm:  0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md:  0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
+  --shadow-lg:  0 10px 32px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  /* ── 폰트 ── */
+  --sans: 'Pretendard', system-ui, 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+
+  font: 14px/1.65 var(--sans);
+  letter-spacing: 0.01em;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body { margin: 0; }
+
+h1, h2, h3 {
+  font-family: var(--sans);
+  color: var(--text-h);
+  margin: 0;
+}
+
+p { margin: 0; }
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  text-align: left;
+  box-sizing: border-box;
+}

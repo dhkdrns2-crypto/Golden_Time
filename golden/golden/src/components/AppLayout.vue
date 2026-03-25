@@ -1,0 +1,638 @@
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuth } from '../store/auth'
+
+const router = useRouter()
+const route = useRoute()
+const { currentUser, isAdmin, logout } = useAuth()
+
+const isSidebarCollapsed = ref(false)
+const isSidebarHidden = ref(false)
+
+function toggleSidebar() {
+  if (isSidebarCollapsed.value) {
+    // 만약 이미 접혀있다면 -> 완전히 숨기기
+    isSidebarCollapsed.value = false
+    isSidebarHidden.value = true
+  } else if (isSidebarHidden.value) {
+    // 만약 숨겨져있다면 -> 펼치기
+    isSidebarHidden.value = false
+  } else {
+    // 만약 펼쳐져있다면 -> 접기
+    isSidebarCollapsed.value = true
+  }
+}
+
+const navItems = computed(() => {
+  if (isAdmin.value) {
+    return [
+      { label: '대시보드', path: '/main' },
+      { label: '신고 목록', path: '/dashboard' },
+      { label: '회원 관리', path: '/users' },
+      { label: '공지사항', path: '/notice' },
+    ]
+  } else {
+    return [
+      { label: '신고 목록', path: '/dashboard' },
+      { label: '마이페이지', path: '/mypage' },
+      { label: '공지사항', path: '/notice' },
+      { label: '문의게시판', path: '/inquiry' },
+    ]
+  }
+})
+
+function handleLogout() {
+  logout()
+  router.push('/login?logout=1')
+}
+
+/* ── 날씨 & 위치 ── */
+const weather = ref({ temp: null, desc: '', icon: '' })
+const locationName = ref('')
+const weatherLoading = ref(true)
+
+function getWeatherInfo(code) {
+  if (code === 0)              return { desc: '맑음',   icon: '☀️' }
+  if (code <= 3)               return { desc: '구름조금', icon: '⛅' }
+  if (code <= 48)              return { desc: '안개',   icon: '🌫️' }
+  if (code <= 67)              return { desc: '비',     icon: '🌧️' }
+  if (code <= 77)              return { desc: '눈',     icon: '❄️' }
+  if (code <= 82)              return { desc: '소나기', icon: '🌦️' }
+  if (code <= 99)              return { desc: '뇌우',   icon: '⛈️' }
+  return { desc: '', icon: '🌤️' }
+}
+
+onMounted(() => {
+  if (!navigator.geolocation) { weatherLoading.value = false; return }
+
+  navigator.geolocation.getCurrentPosition(
+    async ({ coords }) => {
+      const { latitude: lat, longitude: lon } = coords
+      try {
+        // 날씨 (Open-Meteo — API키 불필요)
+        const wRes = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+          `&current=temperature_2m,weather_code&timezone=auto`
+        )
+        const wData = await wRes.json()
+        const temp = Math.round(wData.current.temperature_2m)
+        const code = wData.current.weather_code
+        weather.value = { temp, ...getWeatherInfo(code) }
+
+        // 역지오코딩 (Nominatim — API키 불필요)
+        const gRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}` +
+          `&format=json&accept-language=ko`,
+          { headers: { 'Accept-Language': 'ko' } }
+        )
+        const gData = await gRes.json()
+        const a = gData.address || {}
+        const district = a.city_district || a.borough || a.suburb || a.county || ''
+        const city     = a.city || a.municipality || a.state || ''
+        locationName.value = [city, district].filter(Boolean).join(' ')
+      } catch (e) {
+        // 조용히 실패
+      } finally {
+        weatherLoading.value = false
+      }
+    },
+    () => { weatherLoading.value = false }
+  )
+})
+</script>
+
+<template>
+  <div class="app-layout">
+
+    <!-- ===== 상단 헤더 ===== -->
+    <header class="top-header">
+
+      <!-- 1행: 로고 + 인사 + 날씨/위치 + 로그아웃 -->
+      <div class="header-top">
+
+        <!-- 사이드바가 숨겨졌을 때만 나타나는 복구 버튼 -->
+        <button v-if="isSidebarHidden" class="btn-toggle-restore" @click="toggleSidebar" title="메뉴 열기">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+        </button>
+
+        <!-- 로고 -->
+        <div class="logo" @click="isAdmin ? router.push('/main') : router.push('/dashboard')">
+          <img src="/logos/logo.png" alt="GoldenTime" class="logo-img" />
+        </div>
+
+        <!-- 인사말 (flex:1 로 남은 공간 채움) -->
+        <div class="header-greeting">
+          <span class="role-badge" :class="isAdmin ? 'badge-admin' : 'badge-user'">
+            {{ isAdmin ? '관리자' : '사용자' }}
+          </span>
+          <span class="greeting-text">
+            <strong>{{ currentUser?.userName || currentUser?.loginId }}</strong>님, 안녕하세요!
+          </span>
+        </div>
+
+        <!-- 우측 여백 -->
+        <div class="header-spacer"></div>
+
+        <!-- 날씨 & 위치 (오른쪽 정렬) -->
+        <div class="header-meta">
+          <template v-if="!weatherLoading && weather.temp !== null">
+            <span class="weather-info">
+              <span class="weather-icon">{{ weather.icon }}</span>
+              <span class="weather-temp">{{ weather.temp }}°C</span>
+              <span class="weather-desc">{{ weather.desc }}</span>
+            </span>
+            <span class="meta-sep">|</span>
+          </template>
+          <span v-if="locationName" class="location-info">
+            <span class="location-pin">📍</span>
+            <span class="location-text">{{ locationName }}</span>
+          </span>
+        </div>
+
+        <!-- 로그아웃 -->
+        <button class="btn-logout" @click="handleLogout">로그아웃</button>
+
+      </div>
+
+    </header>
+
+    <!-- ===== 바디: 사이드바 + 콘텐츠 ===== -->
+    <div class="body-area">
+
+      <!-- 좌측 사이드바 -->
+      <aside :class="['sidebar', { collapsed: isSidebarCollapsed, hidden: isSidebarHidden }]">
+        <div class="sidebar-header" v-if="!isSidebarHidden">
+          <p class="nav-header" v-if="!isSidebarCollapsed">메뉴</p>
+          <button class="btn-sidebar-toggle" @click="toggleSidebar" :title="isSidebarCollapsed ? '완전히 숨기기' : '메뉴 접기'">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
+            </svg>
+          </button>
+        </div>
+        <nav class="sidebar-nav" v-if="!isSidebarHidden">
+          <router-link
+            v-for="item in navItems"
+            :key="item.label"
+            :to="item.path"
+            :class="['sidebar-item', { active: route.path === item.path }]"
+            :title="isSidebarCollapsed ? item.label : ''"
+          >
+            <span class="bullet" v-if="!isSidebarCollapsed">•</span>
+            <span class="item-label" v-if="!isSidebarCollapsed">{{ item.label }}</span>
+            <span class="item-icon-only" v-else>{{ item.label[0] }}</span>
+          </router-link>
+        </nav>
+      </aside>
+
+      <!-- 메인 콘텐츠 -->
+      <main class="main-content">
+        <slot />
+      </main>
+
+    </div>
+
+    <!-- ===== 하단 푸터 ===== -->
+    <div class="footer-trigger"></div>
+    <footer class="app-footer">
+
+      <!-- 본문 행 -->
+      <div class="footer-body">
+
+        <!-- 좌측: 로고 + 주소 -->
+        <div class="footer-left">
+          <div class="footer-logo">
+            <img src="/logos/logo.png" alt="GoldenTime" class="footer-logo-img" />
+          </div>
+          <div class="footer-info">
+            <p>인천 부평구 광장로 16 부평역사쇼핑몰 6층 &nbsp;/&nbsp; 인천 부평구 부평동 738-21</p>
+            <p>우편번호: 21404 &nbsp;/&nbsp; 전화: 0507-1355-6224</p>
+            <p class="copyright">Copyright© 2026 GoldenTime All Rights Reserved.</p>
+          </div>
+        </div>
+
+        <!-- 우측: 파트너 로고 -->
+        <div class="footer-partners">
+          <img src="/logos/logo-moel.png" alt="고용노동부" class="partner-logo" />
+          <img src="/logos/logo-straffic.png" alt="STraffic" class="partner-logo" />
+          <img src="/logos/logo-its.png" alt="ITS KOREA" class="partner-logo" />
+          <img src="/logos/logo-mbc.png" alt="MBC아카데미 컴퓨터교육센터" class="partner-logo" />
+        </div>
+
+      </div>
+    </footer>
+
+  </div>
+</template>
+
+<style scoped>
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== 헤더 ===== */
+.top-header {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  height: 84px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 0 #e5e7eb, 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* 로고 */
+.logo {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-right: 24px;
+  padding-right: 24px;
+  border-right: 1px solid #e5e7eb;
+  height: 40px;
+}
+
+/* 헤더 복구 버튼 */
+.btn-toggle-restore {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 8px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-toggle-restore:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.logo-img {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* 인사말 */
+.header-greeting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.greeting-text {
+  font-size: 0.875rem;
+  color: #4b5563;
+  letter-spacing: 0;
+}
+
+.greeting-text strong {
+  color: #111827;
+  font-weight: 700;
+}
+
+.header-spacer { flex: 1; }
+
+/* 날씨·위치 */
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  font-size: 0.825rem;
+  color: #6b7280;
+  border-right: 1px solid #e5e7eb;
+  margin-right: 16px;
+}
+
+.weather-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.weather-icon { font-size: 1rem; line-height: 1; }
+
+.weather-temp {
+  font-weight: 700;
+  color: #111827;
+  font-size: 0.88rem;
+}
+
+.weather-desc { color: #9ca3af; }
+
+.meta-sep { color: #d1d5db; }
+
+.location-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.location-pin { font-size: 0.85rem; }
+.location-text { color: #6b7280; }
+
+/* 역할 배지 */
+.role-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.badge-admin {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.badge-user {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+/* 로그아웃 버튼 */
+.btn-logout {
+  padding: 6px 16px;
+  background: transparent;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.btn-logout:hover {
+  background: #0d2137;
+  color: #fff;
+  border-color: #0d2137;
+}
+
+
+/* ===== 바디 ===== */
+.body-area {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── 다크 네이비 사이드바 ── */
+.sidebar {
+  width: 196px;
+  flex-shrink: 0;
+  background: #0d2137;
+  border-right: none;
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.20);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 20px 0 16px;
+  position: relative;
+  z-index: 10;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar.collapsed {
+  width: 64px;
+}
+
+.sidebar.hidden {
+  width: 0;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 6px;
+}
+
+.sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: 0 0 10px;
+}
+
+.btn-sidebar-toggle {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.nav-header {
+  font-size: 0.66rem;
+  color: rgba(255, 255, 255, 0.28);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.58);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s, border-left-color 0.15s;
+  border-left: 3px solid transparent;
+}
+
+.sidebar.collapsed .sidebar-item {
+  padding: 10px 0;
+  justify-content: center;
+  border-left: none;
+}
+
+.sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.92);
+  border-left-color: rgba(96, 165, 250, 0.4);
+}
+
+.sidebar-item.active {
+  color: #ffffff;
+  font-weight: 700;
+  background: rgba(30, 107, 175, 0.30);
+  border-left-color: #60a5fa;
+}
+
+.sidebar.collapsed .sidebar-item.active {
+  background: rgba(30, 107, 175, 0.45);
+  border-left-color: transparent;
+}
+
+.bullet {
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.22);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.item-icon-only {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.sidebar-item:hover .bullet {
+  color: rgba(96, 165, 250, 0.6);
+}
+
+.sidebar-item.active .bullet {
+  color: #60a5fa;
+}
+
+/* ===== 메인 콘텐츠 ===== */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  background-color: #f8fafc;
+}
+
+/* ===== 푸터 ===== */
+.app-footer {
+  background: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+  flex-shrink: 0;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 푸터 트리거 영역 (마우스를 가까이 대면 나타나게 하기 위함) */
+.footer-trigger {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  z-index: 999;
+}
+
+.app-layout:has(.app-footer:hover) .app-footer,
+.footer-trigger:hover + .app-footer,
+.app-footer:hover {
+  transform: translateY(0);
+}
+
+/* 본문 행 */
+.footer-body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 28px;
+  gap: 24px;
+}
+
+/* 좌측 로고+주소 */
+.footer-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.footer-logo { flex-shrink: 0; }
+
+.footer-logo-img {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+}
+
+.footer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.footer-info p {
+  font-size: 0.77rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.55;
+}
+
+.copyright {
+  color: #aaa !important;
+  font-size: 0.73rem !important;
+  margin-top: 2px;
+}
+
+/* 파트너 */
+.footer-partners {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.partner-logo {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.7;
+  mix-blend-mode: multiply;
+  transition: opacity 0.2s;
+}
+
+.partner-logo:hover {
+  opacity: 1;
+}
+</style>
