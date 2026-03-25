@@ -37,10 +37,10 @@ async function handleLogin() {
 
 <template>
   <div class="login-wrapper">
-    <!-- 배경 영상 -->
-    <video class="bg-video" autoplay muted loop playsinline>
-      <source src="/bg-emergency.mp4" type="video/mp4" />
-    </video>
+    <!-- 배경 (정적 이미지) -->
+    <div class="bg-visual" aria-hidden="true">
+      <img src="/bg-ambulance.png" alt="" class="bg-image" />
+    </div>
 
     <!-- 로그인 카드 -->
     <div class="login-card">
@@ -102,16 +102,18 @@ async function handleLogin() {
   overflow: hidden;
 }
 
-.bg-video {
+.bg-visual {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  inset: 0;
+  z-index: 0;
+}
+
+.bg-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: translate(-50%, -50%);
   opacity: 0.45;
-  z-index: 0;
+  transform: scale(1.02);
 }
 
 /* ===== 카드 ===== */

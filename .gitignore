@@ -16,9 +16,6 @@ num/.cache/
 num/.paddleocr/
 *.pyc
 
-# GitHub 100MB limit — exclude oversized weight file (re-download or use Git LFS separately)
-num/best.pt
-
 # Logs
 num/server.log
 *.log
