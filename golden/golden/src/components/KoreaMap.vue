@@ -104,7 +104,7 @@ const mapData = computed(() => {
 }
 
 .map-label {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   fill: #1e293b;
   text-anchor: middle;

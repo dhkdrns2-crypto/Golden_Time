@@ -26,10 +26,13 @@
   --shadow-md:  0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
   --shadow-lg:  0 10px 32px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
 
-  /* ── 폰트 ── */
+  /* ── 폰트 (기본 크기 ↑ 시인성) ── */
   --sans: 'Pretendard', system-ui, 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --font-base: 16px;
 
-  font: 14px/1.65 var(--sans);
+  font-family: var(--sans);
+  font-size: var(--font-base);
+  line-height: 1.6;
   letter-spacing: 0.01em;
   color: var(--text);
   background: var(--bg);

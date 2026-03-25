@@ -273,9 +273,9 @@ const maxRegionCount = computed(() => {
 }
 
 .summary-icon {
-  font-size: 24px;
-  width: 48px;
-  height: 48px;
+  font-size: 28px;
+  width: 52px;
+  height: 52px;
   background: #f8fafc;
   display: flex;
   align-items: center;
@@ -558,9 +558,9 @@ const maxRegionCount = computed(() => {
 }
 
 .summary-icon {
-  font-size: 24px;
-  width: 48px;
-  height: 48px;
+  font-size: 28px;
+  width: 52px;
+  height: 52px;
   background: #f8fafc;
   display: flex;
   align-items: center;
@@ -705,19 +705,19 @@ const maxRegionCount = computed(() => {
 }
 
 .map-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   fill: #1e293b;
 }
 
 .map-count {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   fill: #dc2626;
 }
 
 .map-label-sm {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   fill: #64748b;
 }
