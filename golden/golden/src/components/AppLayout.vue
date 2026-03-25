@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '../store/auth'
 
@@ -47,59 +47,6 @@ function handleLogout() {
   router.push('/login?logout=1')
 }
 
-/* ── 날씨 & 위치 ── */
-const weather = ref({ temp: null, desc: '', icon: '' })
-const locationName = ref('')
-const weatherLoading = ref(true)
-
-function getWeatherInfo(code) {
-  if (code === 0)              return { desc: '맑음',   icon: '☀️' }
-  if (code <= 3)               return { desc: '구름조금', icon: '⛅' }
-  if (code <= 48)              return { desc: '안개',   icon: '🌫️' }
-  if (code <= 67)              return { desc: '비',     icon: '🌧️' }
-  if (code <= 77)              return { desc: '눈',     icon: '❄️' }
-  if (code <= 82)              return { desc: '소나기', icon: '🌦️' }
-  if (code <= 99)              return { desc: '뇌우',   icon: '⛈️' }
-  return { desc: '', icon: '🌤️' }
-}
-
-onMounted(() => {
-  if (!navigator.geolocation) { weatherLoading.value = false; return }
-
-  navigator.geolocation.getCurrentPosition(
-    async ({ coords }) => {
-      const { latitude: lat, longitude: lon } = coords
-      try {
-        // 날씨 (Open-Meteo — API키 불필요)
-        const wRes = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-          `&current=temperature_2m,weather_code&timezone=auto`
-        )
-        const wData = await wRes.json()
-        const temp = Math.round(wData.current.temperature_2m)
-        const code = wData.current.weather_code
-        weather.value = { temp, ...getWeatherInfo(code) }
-
-        // 역지오코딩 (Nominatim — API키 불필요)
-        const gRes = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}` +
-          `&format=json&accept-language=ko`,
-          { headers: { 'Accept-Language': 'ko' } }
-        )
-        const gData = await gRes.json()
-        const a = gData.address || {}
-        const district = a.city_district || a.borough || a.suburb || a.county || ''
-        const city     = a.city || a.municipality || a.state || ''
-        locationName.value = [city, district].filter(Boolean).join(' ')
-      } catch (e) {
-        // 조용히 실패
-      } finally {
-        weatherLoading.value = false
-      }
-    },
-    () => { weatherLoading.value = false }
-  )
-})
 </script>
 
 <template>
@@ -133,22 +80,6 @@ onMounted(() => {
 
         <!-- 우측 여백 -->
         <div class="header-spacer"></div>
-
-        <!-- 날씨 & 위치 (오른쪽 정렬) -->
-        <div class="header-meta">
-          <template v-if="!weatherLoading && weather.temp !== null">
-            <span class="weather-info">
-              <span class="weather-icon">{{ weather.icon }}</span>
-              <span class="weather-temp">{{ weather.temp }}°C</span>
-              <span class="weather-desc">{{ weather.desc }}</span>
-            </span>
-            <span class="meta-sep">|</span>
-          </template>
-          <span v-if="locationName" class="location-info">
-            <span class="location-pin">📍</span>
-            <span class="location-text">{{ locationName }}</span>
-          </span>
-        </div>
 
         <!-- 로그아웃 -->
         <button class="btn-logout" @click="handleLogout">로그아웃</button>
@@ -309,45 +240,6 @@ onMounted(() => {
 }
 
 .header-spacer { flex: 1; }
-
-/* 날씨·위치 */
-.header-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 20px;
-  font-size: 0.825rem;
-  color: #6b7280;
-  border-right: 1px solid #e5e7eb;
-  margin-right: 16px;
-}
-
-.weather-info {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.weather-icon { font-size: 1rem; line-height: 1; }
-
-.weather-temp {
-  font-weight: 700;
-  color: #111827;
-  font-size: 0.88rem;
-}
-
-.weather-desc { color: #9ca3af; }
-
-.meta-sep { color: #d1d5db; }
-
-.location-info {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.location-pin { font-size: 0.85rem; }
-.location-text { color: #6b7280; }
 
 /* 역할 배지 */
 .role-badge {
