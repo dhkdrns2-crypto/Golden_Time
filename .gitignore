@@ -22,6 +22,8 @@ num/.paddleocr/
 # OCR runtime caches
 num/.matplotlib/
 num/.paddlex/
+num/Ultralytics/
+num/plate_records.db
 
 # Logs
 num/server.log

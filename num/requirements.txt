@@ -1,0 +1,10 @@
+paddlepaddle==3.2.2
+paddleocr>=3.4.0
+opencv-python>=4.5.0
+numpy
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+python-multipart
+
+# PlateEnginePro (YOLO 기반 번호판 탐지 파이프라인)
+ultralytics>=8.0.0

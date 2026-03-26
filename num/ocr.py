@@ -6,6 +6,14 @@ import inspect
 from collections import Counter
 from paddleocr import PaddleOCR
 
+try:
+    # 프로젝트에 이미 있는 고정확도 엔진(우선 사용)
+    from plate_engine_pro import PlateEnginePro
+    _HAS_PLATE_ENGINE_PRO = True
+except Exception:
+    PlateEnginePro = None
+    _HAS_PLATE_ENGINE_PRO = False
+
 def clean_plate_number(text):
     # 공백 제거 및 한글/숫자만 남기기
     cleaned = re.sub(r'[^0-9가-힣]', '', text)
@@ -18,6 +26,17 @@ def clean_plate_number(text):
 
 # OCR 엔진 전역 초기화 (속도 향상 및 메모리 절약)
 _ocr_engine = None
+_plate_engine_pro = None
+
+def get_plate_engine_pro():
+    global _plate_engine_pro
+    if not _HAS_PLATE_ENGINE_PRO:
+        return None
+    if _plate_engine_pro is None:
+        print("[OCR] Initializing PlateEnginePro... (YOLO+OCR)")
+        _plate_engine_pro = PlateEnginePro()
+        print("[OCR] PlateEnginePro initialized successfully.")
+    return _plate_engine_pro
 
 def get_ocr_engine():
     global _ocr_engine
@@ -73,15 +92,16 @@ def recognize_plate_from_video(video_path):
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         print(f"[OCR] Processing video: {total_frames} frames, {fps} FPS")
 
-        ocr = get_ocr_engine()
+        engine_pro = get_plate_engine_pro()
+        ocr = None if engine_pro is not None else get_ocr_engine()
         detected_plates = []
         confidences = []
         
         frame_count = 0
         processed_count = 0
         
-        # 성능을 위해 1초에 한 번꼴(30프레임 간격)로 분석
-        skip_interval = int(fps)
+        # 성능을 위해 1초에 한 번꼴로 분석(최소 10프레임 간격)
+        skip_interval = max(int(fps), 10)
         
         while True:
             ret, frame = cap.read()
@@ -91,23 +111,48 @@ def recognize_plate_from_video(video_path):
             if frame_count % skip_interval == 0:
                 processed_count += 1
                 print(f"[OCR] Analyzing frame {frame_count}/{total_frames}...", end='\r')
-                
-                result = ocr.ocr(frame)
-                for line in _iter_ocr_lines(result):
-                    try:
-                        payload = line[1] if isinstance(line, (list, tuple)) and len(line) >= 2 else None
-                        if not payload or not isinstance(payload, (list, tuple)) or len(payload) < 2:
-                            continue
-                        text = payload[0]
-                        conf = float(payload[1])
-                    except Exception:
-                        continue
 
-                    cleaned = clean_plate_number(str(text))
-                    if cleaned:
-                        print(f"\n[OCR] Detected candidate: {cleaned} ({conf:.2f})")
-                        detected_plates.append(cleaned)
-                        confidences.append(conf)
+                if engine_pro is not None:
+                    # 프로젝트 기존의 고정확도 파이프라인 사용 (YOLO 탐지 + OCR + 검증/보정)
+                    results = engine_pro.process_frame(frame)
+                    for r in results:
+                        plate = r.get("plate")
+                        conf = float(r.get("confidence", 0.0))
+                        if plate:
+                            print(f"\n[OCR] Detected candidate: {plate} ({conf:.2f})")
+                            detected_plates.append(plate)
+                            confidences.append(conf)
+                else:
+                    # PaddleOCR-only 폴백 (정확도 낮음)
+                    h, w = frame.shape[:2]
+                    y1, y2 = int(h * 0.55), int(h * 0.95)
+                    x1, x2 = int(w * 0.20), int(w * 0.80)
+                    roi = frame[y1:y2, x1:x2]
+                    if roi.size > 0 and (roi.shape[1] < 900):
+                        scale = 900 / max(1, roi.shape[1])
+                        roi = cv2.resize(roi, (int(roi.shape[1] * scale), int(roi.shape[0] * scale)))
+
+                    result = ocr.ocr(roi) if roi.size > 0 else ocr.ocr(frame)
+                    lines = list(_iter_ocr_lines(result))
+                    if not lines:
+                        result = ocr.ocr(frame)
+                        lines = list(_iter_ocr_lines(result))
+
+                    for line in lines:
+                        try:
+                            payload = line[1] if isinstance(line, (list, tuple)) and len(line) >= 2 else None
+                            if not payload or not isinstance(payload, (list, tuple)) or len(payload) < 2:
+                                continue
+                            text = payload[0]
+                            conf = float(payload[1])
+                        except Exception:
+                            continue
+
+                        cleaned = clean_plate_number(str(text))
+                        if cleaned:
+                            print(f"\n[OCR] Detected candidate: {cleaned} ({conf:.2f})")
+                            detected_plates.append(cleaned)
+                            confidences.append(conf)
                 
                 # 충분한 샘플(예: 10개 이상)이 모이면 조기 종료하여 시간 단축
                 if len(detected_plates) >= 10:
