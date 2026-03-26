@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '../store/auth'
 
@@ -9,6 +9,29 @@ const { currentUser, isAdmin, logout } = useAuth()
 
 const isSidebarCollapsed = ref(false)
 const isSidebarHidden = ref(false)
+
+let sidebarMq = null
+function syncSidebarForViewport() {
+  if (!sidebarMq) return
+  const isMobile = sidebarMq.matches
+
+  // 모바일에서는 기본적으로 사이드바를 숨겨서 화면이 찌그러지지 않게 함
+  if (isMobile) {
+    isSidebarCollapsed.value = false
+    isSidebarHidden.value = true
+  }
+}
+
+onMounted(() => {
+  sidebarMq = window.matchMedia('(max-width: 768px)')
+  syncSidebarForViewport()
+  sidebarMq.addEventListener('change', syncSidebarForViewport)
+})
+
+onBeforeUnmount(() => {
+  if (!sidebarMq) return
+  sidebarMq.removeEventListener('change', syncSidebarForViewport)
+})
 
 function toggleSidebar() {
   if (isSidebarCollapsed.value) {
@@ -526,5 +549,54 @@ function handleLogout() {
 
 .partner-logo:hover {
   opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .header-top {
+    padding: 0 16px;
+    height: 62px;
+  }
+
+  .greeting-text {
+    display: none;
+  }
+
+  .logo {
+    margin-right: 12px;
+    padding-right: 12px;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 62px;
+    left: 0;
+    height: calc(100vh - 62px);
+    z-index: 2000;
+  }
+
+  .sidebar.hidden {
+    left: 0;
+    width: 0;
+  }
+
+  .body-area {
+    /* header+footer(고정) 영향으로 가로 스크롤/잘림 방지 */
+    overflow: hidden;
+  }
+
+  .footer-trigger {
+    display: none;
+  }
+
+  .app-footer {
+    /* 모바일에서는 hover로 footer를 꺼내기 어렵기 때문에 기본 표시 */
+    transform: translateY(0);
+    position: fixed;
+  }
+
+  .main-content {
+    /* 고정 푸터가 본문을 덮지 않도록 하단 여백 확보 */
+    padding-bottom: 220px;
+  }
 }
 </style>

@@ -663,4 +663,69 @@ function formatTimestamp(ts) {
   font-weight: 600;
   cursor: pointer;
 }
+
+@media (max-width: 768px) {
+  .page-header {
+    padding: 16px;
+  }
+
+  .page-subtitle {
+    display: none;
+  }
+
+  .data-table {
+    table-layout: fixed;
+    font-size: 0.78rem;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 10px 10px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .td-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .btn-detail,
+  .btn-send,
+  .btn-delete {
+    padding: 6px 10px;
+    font-size: 0.76rem;
+  }
+
+  .detail-container {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .detail-modal {
+    width: 95% !important;
+  }
+
+  .modal-box {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .data-table {
+    font-size: 0.72rem;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 9px 8px;
+  }
+
+  .btn-detail,
+  .btn-send,
+  .btn-delete {
+    padding: 6px 8px;
+    font-size: 0.7rem;
+  }
+}
 </style>

@@ -1003,4 +1003,94 @@ function sizePresetsFor(id) {
   font-weight: 600;
   fill: #64748b;
 }
+
+@media (max-width: 768px) {
+  .main-view {
+    padding: 14px;
+  }
+
+  .content-body {
+    padding: 16px;
+  }
+
+  .page-header {
+    padding: 18px 16px;
+  }
+
+  .dashboard-main-grid {
+    gap: 14px;
+    grid-auto-rows: 95px;
+    margin-bottom: 16px;
+  }
+
+  .summary-card,
+  .recent-events-card,
+  .stat-card,
+  .region-card {
+    padding: 14px;
+  }
+
+  .card-label {
+    font-size: 0.78rem;
+    margin-bottom: 8px;
+  }
+
+  .events-table {
+    margin-top: 8px;
+  }
+
+  .events-table th,
+  .events-table td {
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .events-table th {
+    white-space: nowrap;
+  }
+
+  .status-tag {
+    padding: 3px 6px;
+    font-size: 0.7rem;
+  }
+
+  .drag-handle {
+    top: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    font-size: 0.75rem;
+  }
+
+  .size-controls {
+    top: 6px;
+    right: 38px;
+    padding: 4px 5px;
+    gap: 5px;
+  }
+
+  .size-btn {
+    padding: 3px 5px;
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-view {
+    padding: 10px;
+  }
+
+  .dashboard-main-grid {
+    gap: 12px;
+    grid-auto-rows: 88px;
+  }
+
+  .events-table th,
+  .events-table td {
+    padding: 7px 8px;
+    font-size: 0.74rem;
+  }
+}
 </style>
