@@ -1,10 +1,27 @@
-paddlepaddle==3.2.2
-paddleocr>=3.4.0
-opencv-python>=4.5.0
-numpy
-fastapi>=0.100.0
-uvicorn[standard]>=0.22.0
-python-multipart
+# GoldenTimeProject OCR server (Windows venv 기준)
+# 설치:
+#   python -m venv .venv
+#   .\.venv\Scripts\activate
+#   pip install -r num\requirements.txt
 
-# PlateEnginePro (YOLO 기반 번호판 탐지 파이프라인)
-ultralytics>=8.0.0
+# --- FastAPI 서버 ---
+fastapi==0.135.2
+uvicorn[standard]==0.42.0
+python-multipart==0.0.22
+
+# --- PaddleOCR (OCR) ---
+paddlepaddle==3.2.2
+paddleocr==3.4.0
+opencv-python==4.13.0.92
+numpy==2.4.3
+
+# --- PlateEnginePro (YOLO 탐지) ---
+ultralytics==8.4.27
+
+# ultralytics가 의존하지만, Windows에서 자동 설치가 종종 흔들려서 명시적으로 고정
+torch==2.11.0
+torchvision==0.26.0
+
+# ultralytics 런타임에서 자주 같이 설치되는 항목들(환경 차이로 누락되는 케이스 방지)
+matplotlib==3.10.8
+scipy==1.17.1
