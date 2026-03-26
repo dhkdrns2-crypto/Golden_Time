@@ -144,31 +144,31 @@ function formatDate(dateStr) {
 <style scoped>
 .user-management {
   padding: 24px;
-  background: #f8fafc;
+  background: var(--page-bg);
   min-height: 100%;
 }
 
 .panel {
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-solid);
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .page-header {
   padding: 24px 28px;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--border-solid);
 }
 
 .page-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1a202c;
+  color: var(--text-h);
   margin-bottom: 4px;
 }
 
 .page-subtitle {
   font-size: 0.88rem;
-  color: #718096;
+  color: var(--text-muted);
 }
 
 .data-table {
@@ -180,16 +180,16 @@ function formatDate(dateStr) {
 .data-table th {
   text-align: left;
   padding: 14px 20px;
-  background: #f8fafc;
-  color: #4a5568;
+  background: var(--surface-2);
+  color: var(--text-muted);
   font-weight: 600;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-solid);
 }
 
 .data-table td {
   padding: 14px 20px;
-  border-bottom: 1px solid #edf2f7;
-  color: #2d3748;
+  border-bottom: 1px solid var(--border-solid);
+  color: var(--text);
 }
 
 .col-no { width: 60px; }
@@ -200,11 +200,11 @@ function formatDate(dateStr) {
 }
 
 .clickable-row:hover {
-  background: #f8fafc;
+  background: var(--surface-2);
 }
 
 .clickable-row.expanded {
-  background: #f1f5f9;
+  background: var(--surface-2);
 }
 
 .role-badge {
@@ -232,7 +232,7 @@ function formatDate(dateStr) {
 
 .btn-delete-user {
   padding: 4px 10px;
-  background: #fff;
+  background: transparent;
   color: #e53e3e;
   border: 1px solid #fed7d7;
   font-size: 0.75rem;

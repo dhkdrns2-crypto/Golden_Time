@@ -72,6 +72,65 @@ html[data-theme="dark"] {
   --btn-hover-text: #0b1220;
 }
 
+/* ===== 전역 테이블/패널/모달: 모든 페이지 공통 다크 대응 ===== */
+.panel {
+  background: var(--bg-card) !important;
+  border-color: var(--border-solid) !important;
+  color: var(--text) !important;
+}
+
+.page-title { color: var(--text-h) !important; }
+.page-subtitle { color: var(--text-muted) !important; }
+
+table.data-table,
+.data-table {
+  background: transparent;
+  color: var(--text);
+}
+
+.data-table th {
+  background: var(--surface-2) !important;
+  color: var(--text-muted) !important;
+  border-bottom-color: var(--border-solid) !important;
+}
+
+.data-table td {
+  border-bottom-color: var(--border-solid) !important;
+  color: var(--text) !important;
+}
+
+.empty-msg { color: var(--text-muted) !important; }
+
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.55) !important;
+}
+.modal-box {
+  background: var(--bg-card) !important;
+  color: var(--text) !important;
+  border-color: var(--border-solid) !important;
+}
+
+/* 페이지 래퍼(각 view의 scoped 배경 하드코딩을 강제로 덮음) */
+.dashboard,
+.main-view,
+.notice,
+.inquiry,
+.user-management,
+.mypage {
+  background: var(--page-bg) !important;
+  color: var(--text) !important;
+}
+
+/* 버튼 기본(뷰들이 btn-dark 같은 클래스 공유) */
+.btn-dark {
+  background: var(--navy) !important;
+  color: #fff !important;
+}
+html[data-theme="dark"] .btn-dark {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
 html, body {
   height: 100%;
 }
