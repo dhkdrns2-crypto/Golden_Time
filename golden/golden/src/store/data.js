@@ -1,4 +1,5 @@
 import { reactive, computed } from 'vue'
+import { csrfFetch, getXsrfToken } from '../utils/http'
 
 const state = reactive({
   events: [],
@@ -72,7 +73,7 @@ const state = reactive({
 export function useData() {
   async function fetchEvents() {
     try {
-      const response = await fetch('/api/dashboard/events', { credentials: 'include' })
+      const response = await csrfFetch('/api/dashboard/events')
       if (response.ok) {
         state.events = await response.json()
       }
@@ -83,7 +84,7 @@ export function useData() {
 
   async function fetchStats() {
     try {
-      const response = await fetch('/api/dashboard/stats', { credentials: 'include' })
+      const response = await csrfFetch('/api/dashboard/stats')
       if (response.ok) {
         state.stats = await response.json()
       }
@@ -94,7 +95,7 @@ export function useData() {
 
   async function fetchRecentEvents() {
     try {
-      const response = await fetch('/api/dashboard/recent-events', { credentials: 'include' })
+      const response = await csrfFetch('/api/dashboard/recent-events')
       if (response.ok) {
         state.recentEvents = await response.json()
       }
@@ -105,7 +106,7 @@ export function useData() {
 
   async function fetchEventsByRegion() {
     try {
-      const response = await fetch('/api/dashboard/events-by-region', { credentials: 'include' })
+      const response = await csrfFetch('/api/dashboard/events-by-region')
       if (response.ok) {
         state.eventsByRegion = await response.json()
       }
@@ -120,13 +121,13 @@ export function useData() {
       if (eventData.videoFile) {
         formData.append('videoFile', eventData.videoFile)
       }
-      if (eventData.vehicleId) {
-        formData.append('vehicleId', eventData.vehicleId)
+      if (eventData.vehicleId != null && eventData.vehicleId !== '') {
+        formData.append('vehicleId', String(eventData.vehicleId))
       }
-      // 사용자가 영상만 올리기로 했으므로 다른 필드는 백엔드에서 처리하거나 기본값 사용
-      // carNumber, serialNumber 등은 이제 필수값이 아니게 될 것임
+      const xsrf = getXsrfToken()
+      if (xsrf) formData.append('_csrf', xsrf)
 
-      const response = await fetch('/api/dashboard/upload', {
+      const response = await csrfFetch('/api/dashboard/upload', {
         method: 'POST',
         body: formData,
       })
@@ -135,21 +136,25 @@ export function useData() {
         await fetchEvents()
         return { success: true }
       }
+      const text = await response.text().catch(() => '')
+      return { success: false, status: response.status, message: text || response.statusText }
     } catch (error) {
       console.error('Add event error:', error)
     }
-    return { success: false }
+    return { success: false, message: '업로드 중 오류가 발생했습니다.' }
   }
 
   async function deleteEvent(gtId) {
     try {
-      const response = await fetch(`/api/dashboard/events/${gtId}`, {
+      const response = await csrfFetch(`/api/dashboard/events/${gtId}`, {
         method: 'DELETE',
       })
       if (response.ok) {
         await fetchEvents()
         return { success: true }
       }
+      const text = await response.text().catch(() => '')
+      return { success: false, status: response.status, message: text || response.statusText }
     } catch (error) {
       console.error('Delete event error:', error)
     }
@@ -158,13 +163,15 @@ export function useData() {
 
   async function sendEvent(gtId, target) {
     try {
-      const response = await fetch(`/api/dashboard/events/${gtId}/send?target=${target}`, {
+      const response = await csrfFetch(`/api/dashboard/events/${gtId}/send?target=${encodeURIComponent(target)}`, {
         method: 'POST',
       })
       if (response.ok) {
         await fetchEvents()
         return { success: true }
       }
+      const text = await response.text().catch(() => '')
+      return { success: false, status: response.status, message: text || response.statusText }
     } catch (error) {
       console.error('Send event error:', error)
     }
@@ -193,7 +200,7 @@ export function useData() {
 
   async function fetchNotices() {
     try {
-      const response = await fetch('/api/notices', { credentials: 'include' })
+      const response = await csrfFetch('/api/notices')
       if (response.ok) {
         const list = await response.json()
         state.notices = list.map(mapNoticeFromApi)
@@ -209,12 +216,18 @@ export function useData() {
     fd.append('content', payload.content)
     fd.append('important', String(!!payload.important))
     if (payload.imageFile) fd.append('imageFile', payload.imageFile)
-    const response = await fetch('/api/notices', {
+    const xsrf = getXsrfToken()
+    if (xsrf) fd.append('_csrf', xsrf)
+    const response = await csrfFetch('/api/notices', {
       method: 'POST',
       body: fd,
-      credentials: 'include',
     })
-    if (response.ok) await fetchNotices()
+    if (response.ok) {
+      await fetchNotices()
+      return { success: true }
+    }
+    const text = await response.text().catch(() => '')
+    return { success: false, status: response.status, message: text || response.statusText }
   }
 
   async function updateNotice(id, payload) {
@@ -223,24 +236,34 @@ export function useData() {
     fd.append('content', payload.content)
     fd.append('important', String(!!payload.important))
     if (payload.imageFile) fd.append('imageFile', payload.imageFile)
-    const response = await fetch(`/api/notices/${id}`, {
+    const xsrf = getXsrfToken()
+    if (xsrf) fd.append('_csrf', xsrf)
+    const response = await csrfFetch(`/api/notices/${id}`, {
       method: 'PUT',
       body: fd,
-      credentials: 'include',
     })
-    if (response.ok) await fetchNotices()
+    if (response.ok) {
+      await fetchNotices()
+      return { success: true }
+    }
+    const text = await response.text().catch(() => '')
+    return { success: false, status: response.status, message: text || response.statusText }
   }
 
   async function deleteNotice(id) {
-    const response = await fetch(`/api/notices/${id}`, {
+    const response = await csrfFetch(`/api/notices/${id}`, {
       method: 'DELETE',
-      credentials: 'include',
     })
-    if (response.ok) await fetchNotices()
+    if (response.ok) {
+      await fetchNotices()
+      return { success: true }
+    }
+    const text = await response.text().catch(() => '')
+    return { success: false, status: response.status, message: text || response.statusText }
   }
 
   async function fetchNoticeDetail(id) {
-    const response = await fetch(`/api/notices/${id}`, { credentials: 'include' })
+    const response = await csrfFetch(`/api/notices/${id}`)
     if (response.ok) {
       const n = await response.json()
       const mapped = mapNoticeFromApi(n)

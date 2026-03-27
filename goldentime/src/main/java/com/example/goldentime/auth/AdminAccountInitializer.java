@@ -33,9 +33,10 @@ public class AdminAccountInitializer {
             userRepository.save(admin);
             System.out.println("Admin account created: admin / 1234");
         } else {
-            // 권한이 변경되었을 수도 있으므로 ADMIN으로 업데이트
+            // 회원가입으로 USER만 들어온 admin 계정 → hasRole("ADMIN") 과 맞추기
             userRepository.findByLoginId("admin").ifPresent(user -> {
-                if (!"ADMIN".equals(user.getRole())) {
+                String r = user.getRole() != null ? user.getRole().trim() : "";
+                if (!"ADMIN".equalsIgnoreCase(r)) {
                     user.setRole("ADMIN");
                     userRepository.save(user);
                     System.out.println("Admin role restored for user: admin");

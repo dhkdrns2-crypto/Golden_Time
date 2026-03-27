@@ -19,9 +19,23 @@ public class CorsConfig implements WebMvcConfigurer {
 
         String[] origins = allowedOrigins.split("\\s*,\\s*");
 
+        // API
         registry.addMapping("/api/**")
                 .allowedOrigins(origins)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
+
+        // 업로드/정적 파일 (프론트 dev 서버(5173 등)에서 직접 접근 시 CORS 필요)
+        registry.addMapping("/images/**")
+                .allowedOrigins(origins)
+                .allowedMethods("GET", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
+
+        registry.addMapping("/videos/**")
+                .allowedOrigins(origins)
+                .allowedMethods("GET", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }

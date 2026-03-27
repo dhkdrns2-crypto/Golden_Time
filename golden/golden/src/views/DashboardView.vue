@@ -3,7 +3,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useAuth } from '../store/auth'
 import { useData } from '../store/data'
 
-const { currentUser, isAdmin } = useAuth()
+const { currentUser } = useAuth()
 const { events, fetchEvents, addEvent, deleteEvent, sendEvent, updateEvent } = useData()
 
 onMounted(async () => {
@@ -35,16 +35,24 @@ function handleVideoChange(e) {
 }
 
 async function handleUpload() {
-  if (!uploadForm.value.videoFile || !uploadForm.value.vehicleId) return
-  
+  if (!uploadForm.value.videoFile || !uploadForm.value.vehicleId) {
+    alert('영상 파일과 차량을 선택하세요.')
+    return
+  }
+
   const res = await addEvent({
     videoFile: uploadForm.value.videoFile,
-    vehicleId: uploadForm.value.vehicleId
+    vehicleId: uploadForm.value.vehicleId,
   })
-  
+
   if (res.success) {
     uploadForm.value = { videoFile: null, videoName: '', vehicleId: '' }
     showUploadModal.value = false
+    alert('업로드되었습니다.')
+  } else if (res?.status === 401) {
+    alert('로그인이 필요합니다.')
+  } else {
+    alert(res?.message || '업로드에 실패했습니다.')
   }
 }
 
@@ -63,8 +71,10 @@ async function handleDelete(gtId) {
   const res = await deleteEvent(gtId)
   if (res.success) {
     alert('삭제되었습니다.')
+  } else if (res?.status === 401) {
+    alert('로그인이 필요합니다.')
   } else {
-    alert('삭제에 실패했습니다.')
+    alert(res?.message || '삭제에 실패했습니다.')
   }
 }
 
@@ -84,8 +94,10 @@ async function handleSend(target) {
     alert(`${targetName}으로 전송되었습니다.`)
     showSendModal.value = false
     eventToSend.value = null
+  } else if (res?.status === 401) {
+    alert('로그인이 필요합니다.')
   } else {
-    alert('전송에 실패했습니다.')
+    alert(res?.message || '전송에 실패했습니다.')
   }
 }
 
@@ -108,7 +120,7 @@ function formatTimestamp(ts) {
           <h2 class="page-title">신고 목록</h2>
           <p class="page-subtitle">차량 주행 중 발생한 긴급 상황 및 신고 이벤트 목록입니다.</p>
         </div>
-        <button v-if="!isAdmin" class="btn-dark" @click="showUploadModal = true">영상 업로드</button>
+        <button class="btn-dark" @click="showUploadModal = true">영상 업로드</button>
       </div>
 
       <table class="data-table">

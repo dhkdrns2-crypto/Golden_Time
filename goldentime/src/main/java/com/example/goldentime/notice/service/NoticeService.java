@@ -57,7 +57,9 @@ public class NoticeService {
 
     private String saveFile(MultipartFile file) throws IOException {
         String projectPath = System.getProperty("user.dir");
-        String fullPath = projectPath + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "static" + File.separator + "images";
+        // 실행 중인 서버가 확실히 서빙할 수 있는 외부 폴더로 저장
+        // (/images/** 는 WebConfig에서 external-data/images 로 매핑)
+        String fullPath = projectPath + File.separator + "external-data" + File.separator + "images";
         
         File directory = new File(fullPath);
         if (!directory.exists()) {

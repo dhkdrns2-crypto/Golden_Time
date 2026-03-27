@@ -144,6 +144,27 @@ html[data-theme="dark"] .main-view .region-card {
   border-color: rgba(255, 255, 255, 0.14) !important;
 }
 
+/* 지역별 사건 발생 현황(Region) 내부 흰 요소 제거 */
+html[data-theme="dark"] .main-view .region-card-body,
+html[data-theme="dark"] .main-view .region-list {
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .main-view .region-item {
+  background: #0b1626 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html[data-theme="dark"] .main-view .region-rank,
+html[data-theme="dark"] .main-view .region-name,
+html[data-theme="dark"] .main-view .region-count {
+  color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .main-view .region-bar-bg {
+  background: #111827 !important;
+}
+
 html[data-theme="dark"] .main-view .summary-icon {
   background: #0b1626 !important;
   border-color: rgba(255, 255, 255, 0.12) !important;

@@ -78,20 +78,32 @@ async function handleSubmit() {
     formMsg.value = '제목과 내용을 모두 입력하세요.'
     return
   }
+  formMsg.value = ''
+  let res
   if (isEditMode.value && selectedNotice.value) {
-    await updateNotice(selectedNotice.value.id, {
+    res = await updateNotice(selectedNotice.value.id, {
       title: form.value.title,
       content: form.value.content,
       important: form.value.important,
       imageFile: pendingImageFile.value,
     })
   } else {
-    await addNotice({
+    res = await addNotice({
       title: form.value.title,
       content: form.value.content,
       important: form.value.important,
       imageFile: pendingImageFile.value,
     })
+  }
+  if (!res?.success) {
+    if (res?.status === 403) {
+      formMsg.value = '권한이 없습니다. 관리자 계정으로 로그인했는지 확인하세요.'
+    } else if (res?.status === 401) {
+      formMsg.value = '로그인이 필요합니다.'
+    } else {
+      formMsg.value = res?.message || '저장에 실패했습니다.'
+    }
+    return
   }
   revokePreview()
   pendingImageFile.value = null
@@ -99,10 +111,19 @@ async function handleSubmit() {
 }
 
 async function handleDelete(id) {
-  if (confirm('공지사항을 삭제하시겠습니까?')) {
-    await deleteNotice(id)
-    viewMode.value = 'list'
+  if (!confirm('공지사항을 삭제하시겠습니까?')) return
+  const res = await deleteNotice(id)
+  if (!res?.success) {
+    if (res?.status === 403) {
+      alert('삭제 권한이 없습니다. 관리자 계정으로 로그인했는지 확인하세요.')
+    } else if (res?.status === 401) {
+      alert('로그인이 필요합니다.')
+    } else {
+      alert(res?.message || '삭제에 실패했습니다.')
+    }
+    return
   }
+  viewMode.value = 'list'
 }
 </script>
 
@@ -136,7 +157,7 @@ async function handleDelete(id) {
             <tr
               v-for="(notice, idx) in sortedNotices"
               :key="notice.id"
-              :class="['clickable-row', { 'important-row': notice.important }]"
+              :class="['clickable-row']"
               @click="openDetail(notice)"
             >
               <td>{{ sortedNotices.length - idx }}</td>
@@ -349,27 +370,24 @@ async function handleDelete(id) {
 .col-views { width: 70px; }
 
 .clickable-row { cursor: pointer; transition: background 0.12s; }
-.clickable-row:hover { background: #f9f9f9; }
-.important-row { background: #fffbeb; }
-.important-row:hover { background: #fef9e7; }
+/* 중요글도 목록에서는 일반글과 동일한 hover/배경 */
+.clickable-row:hover { background: rgba(15, 23, 42, 0.04); }
 
 /* ===== 다크모드 hover 톤 완화 (공지사항) ===== */
 :global(html[data-theme='dark']) .notice .clickable-row:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-}
-
-:global(html[data-theme='dark']) .notice .important-row {
-  background: rgba(250, 204, 21, 0.06) !important;
-}
-
-:global(html[data-theme='dark']) .notice .important-row:hover {
-  background: rgba(250, 204, 21, 0.09) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
 }
 
 :global(html[data-theme='dark']) .notice .important-badge {
-  background: rgba(250, 204, 21, 0.18);
-  color: #fde68a;
-  border-color: rgba(250, 204, 21, 0.28);
+  /* 배지도 과하게 밝지 않게 */
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-h);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ===== 다크모드: 공지 상세(글 내용) 텍스트 가독성 ===== */
+:global(html[data-theme='dark']) .notice .detail-content {
+  color: #f8fafc !important;
 }
 
 .thumb {
@@ -452,7 +470,7 @@ async function handleDelete(id) {
 .detail-content {
   min-height: 48px;
   line-height: 1.75;
-  color: #334155;
+  color: var(--text);
   white-space: pre-wrap;
   word-break: break-word;
   font-size: 0.94rem;

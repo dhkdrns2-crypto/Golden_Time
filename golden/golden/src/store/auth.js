@@ -1,4 +1,5 @@
 import { reactive, computed } from 'vue'
+import { csrfFetch } from '../utils/http'
 
 const state = reactive({
   currentUser: null,
@@ -14,7 +15,7 @@ export function useAuth() {
 
   async function fetchMe() {
     try {
-      const response = await fetch('/api/users/me')
+      const response = await csrfFetch('/api/users/me')
       if (response.ok) {
         const user = await response.json()
         state.currentUser = user
@@ -35,7 +36,8 @@ export function useAuth() {
       params.append('username', username)
       params.append('password', password)
 
-      const response = await fetch('/api/auth/login', {
+      // 로그인은 CSRF 예외로 두더라도, credentials는 포함되어야 세션이 잡힘
+      const response = await csrfFetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -56,7 +58,7 @@ export function useAuth() {
 
   async function logout() {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
+      await csrfFetch('/api/auth/logout', { method: 'POST' })
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
@@ -67,7 +69,7 @@ export function useAuth() {
 
   async function register(username, name, password, phone, email, address, vehicleNumber, deviceSerial) {
     try {
-      const response = await fetch('/api/auth/signup', {
+      const response = await csrfFetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -95,7 +97,7 @@ export function useAuth() {
 
   async function updateProfile(updates) {
     try {
-      const response = await fetch('/api/users/me', {
+      const response = await csrfFetch('/api/users/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -104,15 +106,17 @@ export function useAuth() {
         await fetchMe()
         return { success: true }
       }
+      const text = await response.text().catch(() => '')
+      return { success: false, status: response.status, message: text || response.statusText }
     } catch (error) {
       console.error('Update profile error:', error)
     }
-    return { success: false }
+    return { success: false, message: '네트워크 오류가 발생했습니다.' }
   }
 
   async function addVehicle(carNumber, serialNumber) {
     try {
-      const response = await fetch('/api/users/me/vehicles', {
+      const response = await csrfFetch('/api/users/me/vehicles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ carNumber, serialNumber }),
@@ -129,7 +133,7 @@ export function useAuth() {
 
   async function fetchUsers() {
     try {
-      const response = await fetch('/api/users')
+      const response = await csrfFetch('/api/users')
       if (response.ok) {
         state.users = await response.json()
       }
@@ -140,7 +144,7 @@ export function useAuth() {
 
   async function deleteUser(userId) {
     try {
-      const response = await fetch(`/api/users/${userId}`, {
+      const response = await csrfFetch(`/api/users/${userId}`, {
         method: 'DELETE'
       })
       if (response.ok) {
@@ -157,7 +161,7 @@ export function useAuth() {
 
   async function updateRole(userId, role) {
     try {
-      const response = await fetch(`/api/users/${userId}/role?role=${role}`, {
+      const response = await csrfFetch(`/api/users/${userId}/role?role=${role}`, {
         method: 'PUT'
       })
       if (response.ok) {

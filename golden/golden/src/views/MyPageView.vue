@@ -1,16 +1,29 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useAuth } from '../store/auth'
 
 const { currentUser, updateProfile, addVehicle } = useAuth()
 
 const form = ref({
-  name: currentUser.value?.userName ?? '',
-  phone: currentUser.value?.phone ?? '',
-  email: currentUser.value?.email ?? '',
-  address: currentUser.value?.address ?? '',
+  userName: '',
+  phone: '',
+  email: '',
+  address: '',
   newPassword: '',
 })
+
+// 마운트 시점에는 currentUser 가 아직 없을 수 있음 → 로드되면 폼에 반영
+watch(
+  currentUser,
+  (u) => {
+    if (!u) return
+    form.value.userName = u.userName ?? ''
+    form.value.phone = u.phone ?? ''
+    form.value.email = u.email ?? ''
+    form.value.address = u.address ?? ''
+  },
+  { immediate: true },
+)
 
 const vehicleForm = ref({
   carNumber: '',
@@ -21,18 +34,18 @@ const isAddingVehicle = ref(false)
 const msg = ref('')
 const msgType = ref('success')
 
-function handleSave() {
-  if (!form.value.name.trim()) {
+async function handleSave() {
+  if (!form.value.userName.trim()) {
     msg.value = '이름을 입력하세요.'
     msgType.value = 'error'
     return
   }
 
   const updates = {
-    name: form.value.name,
-    phone: form.value.phone,
-    email: form.value.email,
-    address: form.value.address,
+    userName: form.value.userName.trim(),
+    phone: form.value.phone?.trim() ?? '',
+    email: form.value.email?.trim() ?? '',
+    address: form.value.address?.trim() ?? '',
   }
 
   if (form.value.newPassword) {
@@ -42,13 +55,18 @@ function handleSave() {
       return
     }
     updates.password = form.value.newPassword
-    form.value.newPassword = ''
   }
 
-  updateProfile(updates)
-  msg.value = '정보가 수정되었습니다.'
-  msgType.value = 'success'
-  setTimeout(() => (msg.value = ''), 3000)
+  const res = await updateProfile(updates)
+  if (res?.success) {
+    form.value.newPassword = ''
+    msg.value = '정보가 수정되었습니다.'
+    msgType.value = 'success'
+  } else {
+    msg.value = res?.message || '정보 수정에 실패했습니다. 다시 시도해 주세요.'
+    msgType.value = 'error'
+  }
+  setTimeout(() => (msg.value = ''), 5000)
 }
 
 async function handleAddVehicle() {
@@ -88,7 +106,7 @@ async function handleAddVehicle() {
         <div class="info-section">
           <div class="field-row">
             <span class="field-label">이름</span>
-            <input v-model="form.name" type="text" class="field-input" />
+            <input v-model="form.userName" type="text" class="field-input" />
           </div>
           <div class="field-row">
             <span class="field-label">전화번호</span>
@@ -144,7 +162,7 @@ async function handleAddVehicle() {
                 <td>{{ v.serialNumber || '-' }}</td>
               </tr>
               <tr v-else>
-                <td colspan="2" style="text-align: center; color: #94a3b8; padding: 20px;">등록된 차량 정보가 없습니다.</td>
+                <td colspan="2" class="empty-vehicles">등록된 차량 정보가 없습니다.</td>
               </tr>
             </tbody>
           </table>
@@ -176,31 +194,31 @@ async function handleAddVehicle() {
 <style scoped>
 .mypage {
   padding: 24px;
-  background: #f8fafc;
+  background: var(--page-bg);
   min-height: 100%;
 }
 
 .panel {
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-solid);
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .page-header {
   padding: 24px 28px;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--border-solid);
 }
 
 .page-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1a202c;
+  color: var(--text-h);
   margin-bottom: 4px;
 }
 
 .page-subtitle {
   font-size: 0.88rem;
-  color: #718096;
+  color: var(--text-muted);
 }
 
 .content-body {
@@ -214,20 +232,20 @@ async function handleAddVehicle() {
 
 .field-row {
   padding: 12px 0;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--border-solid);
 }
 
 .field-label {
   display: block;
   font-size: 0.82rem;
-  color: #64748b;
+  color: var(--text-muted);
   margin-bottom: 4px;
   font-weight: 600;
 }
 
 .hint {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-light);
   font-weight: 400;
 }
 
@@ -236,14 +254,14 @@ async function handleAddVehicle() {
   border: none;
   outline: none;
   font-size: 0.93rem;
-  color: #1e293b;
+  color: var(--text);
   background: transparent;
   padding: 4px 0;
   font-family: inherit;
 }
 
 .field-input::placeholder {
-  color: #cbd5e1;
+  color: rgba(148, 163, 184, 0.8);
 }
 
 /* 차량 정보 */
@@ -261,7 +279,7 @@ async function handleAddVehicle() {
 .section-title {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-h);
   margin-bottom: 0;
 }
 
@@ -269,9 +287,9 @@ async function handleAddVehicle() {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #64748b;
+  border: 1px solid var(--border-solid);
+  background: var(--bg-card);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -280,15 +298,15 @@ async function handleAddVehicle() {
 }
 
 .btn-add-circle:hover {
-  background: #f8fafc;
-  color: #1e293b;
-  border-color: #cbd5e1;
+  background: var(--surface-2);
+  color: var(--text-h);
+  border-color: var(--border-solid);
 }
 
 /* 차량 추가 패널 */
 .add-vehicle-panel {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--surface-2);
+  border: 1px solid var(--border-solid);
   padding: 16px;
   margin-bottom: 16px;
   border-radius: 4px;
@@ -310,15 +328,17 @@ async function handleAddVehicle() {
 .add-input-group label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .add-input-group input {
   padding: 8px 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-solid);
   border-radius: 4px;
   font-size: 0.88rem;
   outline: none;
+  background: var(--bg-card);
+  color: var(--text);
 }
 
 .add-input-group input:focus {
@@ -340,28 +360,34 @@ async function handleAddVehicle() {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.88rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-solid);
 }
 
 .data-table th {
   text-align: left;
   padding: 12px 20px;
-  background: #f8fafc;
-  color: #4a5568;
+  background: var(--surface-2);
+  color: var(--text-muted);
   font-weight: 600;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border-solid);
 }
 
 .data-table td {
   padding: 12px 20px;
-  color: #2d3748;
+  color: var(--text);
+}
+
+.empty-vehicles {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 20px;
 }
 
 /* 비밀번호 */
 .pw-section {
   margin-bottom: 24px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--border-solid);
 }
 
 /* 메시지 */
@@ -392,7 +418,7 @@ async function handleAddVehicle() {
 
 .btn-dark {
   padding: 10px 24px;
-  background: #1a202c;
+  background: var(--navy);
   color: #fff;
   border: none;
   font-size: 0.9rem;
@@ -402,6 +428,6 @@ async function handleAddVehicle() {
 }
 
 .btn-dark:hover {
-  background: #2d3748;
+  background: var(--btn-hover-bg);
 }
 </style>

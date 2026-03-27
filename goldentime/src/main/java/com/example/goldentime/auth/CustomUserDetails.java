@@ -23,14 +23,16 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Spring Security hasRole("ADMIN") → GrantedAuthority "ROLE_ADMIN" 필요
+        // DB에 "admin", "ADMIN", "ROLE_admin" 등으로 섞여 있어도 동일하게 매칭되도록 정규화
         String role = user.getRole();
         if (role == null || role.isBlank()) {
             return List.of(new SimpleGrantedAuthority("ROLE_USER"));
         }
-        if (role.startsWith("ROLE_")) {
-            return List.of(new SimpleGrantedAuthority(role));
-        }
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role));
+        String r = role.trim();
+        String suffix = r.startsWith("ROLE_") ? r.substring(5) : r;
+        String normalized = "ROLE_" + suffix.toUpperCase();
+        return List.of(new SimpleGrantedAuthority(normalized));
     }
 
     @Override
